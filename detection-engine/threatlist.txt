@@ -1,0 +1,4 @@
+# One IP or domain per line. Loaded at startup together with the abuse.ch Feodo list.
+# Lab fake C2 server (Nitin's setup):
+10.66.0.10
+evil-c2.lab
