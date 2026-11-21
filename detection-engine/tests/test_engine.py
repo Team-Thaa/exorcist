@@ -73,6 +73,62 @@ def test_live_mode_drops_decoy_contact_only_when_listener_runs(monkeypatch):
     assert start_decoy(lambda alerts: None, wait=0.5) is False
 
 
+LAPTOP = "192.168.50.10"   # a teammate's laptop running the discovery scanner
+
+
+def discovery_sweep(src):
+    """Rows like discovery/scanner.py makes: ports 22 and 23 on 12 hosts, plus the decoy."""
+    rows = []
+    for i in range(12):
+        rows += [conn(f"192.168.50.{100 + i}", p, T0 + i, src=src) for p in (22, 23)]
+    rows.append(conn(config.DECOY_IP, 23, T0 + 12, src=src))
+    return rows
+
+
+def run_all(det_list, rows):
+    out = []
+    for r in rows:
+        for d in det_list:
+            out += d.on_conn(r)
+    return out
+
+
+def test_trusted_scanners_include_gateway():
+    assert config.GATEWAY_IP in config.TRUSTED_SCANNERS
+
+
+def test_scan_from_gateway_raises_nothing():
+    dets = [DecoyContact(), LanScan(), FanOut()]
+    assert run_all(dets, discovery_sweep(config.GATEWAY_IP)) == []
+
+
+def test_scan_from_trusted_laptop_raises_nothing(monkeypatch):
+    monkeypatch.setattr(config, "TRUSTED_SCANNERS", {config.GATEWAY_IP, LAPTOP})
+    dets = [DecoyContact(), LanScan(), FanOut()]
+    rows = discovery_sweep(LAPTOP)
+    rows += [conn(f"8.{i // 250}.{i % 250}.1", 443, T0 + 20 + i * 0.1, src=LAPTOP) for i in range(120)]
+    assert run_all(dets, rows) == []
+
+
+def test_scan_from_untrusted_lan_ip_still_alerts(monkeypatch):
+    monkeypatch.setattr(config, "TRUSTED_SCANNERS", {config.GATEWAY_IP, LAPTOP})
+    dets = [DecoyContact(), LanScan(), FanOut()]
+    types = {a["type"] for a in run_all(dets, discovery_sweep("192.168.50.66"))}
+    assert types == {"lan_scan", "decoy_login"}
+
+
+def test_decoy_ignores_trusted_peer(monkeypatch):
+    from engine.decoy import Decoy
+    monkeypatch.setattr(config, "TRUSTED_SCANNERS", {config.GATEWAY_IP, LAPTOP})
+    got = []
+    decoy = Decoy(got.extend)
+    decoy._flag(LAPTOP, "telnet connection")
+    decoy._flag(config.GATEWAY_IP, "telnet connection")
+    assert got == []
+    decoy._flag("192.168.50.66", "telnet connection")
+    assert len(got) == 1 and got[0]["type"] == "decoy_login"
+
+
 def test_lan_scan_fires_on_telnet_sweep():
     rows = [conn(f"192.168.50.{100 + i}", 23, T0 + i) for i in range(12)]
     alerts = run(LanScan(), rows)

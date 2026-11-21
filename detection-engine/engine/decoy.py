@@ -21,7 +21,7 @@ class Decoy:
         self.emit = emit          # function(list_of_alerts)
 
     def _flag(self, peer_ip, how, creds=None):
-        if peer_ip in (config.GATEWAY_IP, config.DECOY_IP):
+        if peer_ip in config.TRUSTED_SCANNERS or peer_ip == config.DECOY_IP:
             return
         detail = f"{how} on decoy {config.DECOY_IP}"
         if creds:

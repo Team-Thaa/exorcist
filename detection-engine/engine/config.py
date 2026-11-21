@@ -13,6 +13,9 @@ LAN_IFACE = env("LAN_IFACE", "br-lan")
 DECOY_IP = env("DECOY_IP", "192.168.50.99")             # extra IP added to the Pi for the decoy
 DECOY_TELNET_PORTS = [23, 2323]
 DECOY_HTTP_PORT = 80
+# Machines allowed to scan the LAN (e.g. the discovery scanner). LanScan, FanOut and the decoy ignore them.
+# Comma-separated, e.g. TRUSTED_SCANNERS=192.168.50.10,192.168.50.11. The gateway is always included.
+TRUSTED_SCANNERS = {GATEWAY_IP} | {ip.strip() for ip in env("TRUSTED_SCANNERS", "").split(",") if ip.strip()}
 
 # Zeek logs (run Zeek with JSON output, see README)
 ZEEK_LOG_DIR = env("ZEEK_LOG_DIR", "/opt/zeek/logs/current")

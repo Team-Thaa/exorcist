@@ -60,7 +60,7 @@ class DecoyContact:
     """Backup for decoy.py: spots decoy contact in conn.log, so replays and rate measurement see it too."""
     def on_conn(self, r):
         src, dst, port, ts = r["id.orig_h"], r["id.resp_h"], r["id.resp_p"], r["ts"]
-        if dst == config.DECOY_IP and config.is_lan(src) and src != config.GATEWAY_IP:
+        if dst == config.DECOY_IP and config.is_lan(src) and src not in config.TRUSTED_SCANNERS:
             return make_alert(src, "decoy_login", "critical",
                               f"Contacted decoy {config.DECOY_IP} on port {port} (seen in traffic)", ts,
                               r.get("orig_l2_addr"), key="zeek")
@@ -76,6 +76,8 @@ class LanScan:
         src, dst, port, ts = r["id.orig_h"], r["id.resp_h"], r["id.resp_p"], r["ts"]
         if not (config.is_lan(src) and config.is_lan(dst)) or port not in config.LAN_SCAN_PORTS:
             return []
+        if src in config.TRUSTED_SCANNERS:
+            return []  # e.g. the discovery scanner
         if dst == config.DECOY_IP:
             return []  # the decoy has its own detector
         seen = self.targets.add(src, dst, ts)
@@ -93,7 +95,7 @@ class FanOut:
 
     def on_conn(self, r):
         src, dst, ts = r["id.orig_h"], r["id.resp_h"], r["ts"]
-        if not config.is_lan(src) or config.is_lan(dst):
+        if not config.is_lan(src) or config.is_lan(dst) or src in config.TRUSTED_SCANNERS:
             return []
         seen = self.dests.add(src, dst, ts)
         if len(seen) >= config.FANOUT_MIN_DESTS:
