@@ -56,6 +56,17 @@ class SlidingSet:
 
 # ---------------------------------------------------------------- conn.log detectors
 
+class DecoyContact:
+    """Backup for decoy.py: spots decoy contact in conn.log, so replays and rate measurement see it too."""
+    def on_conn(self, r):
+        src, dst, port, ts = r["id.orig_h"], r["id.resp_h"], r["id.resp_p"], r["ts"]
+        if dst == config.DECOY_IP and config.is_lan(src) and src != config.GATEWAY_IP:
+            return make_alert(src, "decoy_login", "critical",
+                              f"Contacted decoy {config.DECOY_IP} on port {port} (seen in traffic)", ts,
+                              r.get("orig_l2_addr"), key="zeek")
+        return []
+
+
 class LanScan:
     """One device trying Telnet/SSH on many local devices = a bot spreading."""
     def __init__(self):
@@ -189,6 +200,6 @@ class SuspiciousDNS:
 def default_detectors(threat_ips=(), threat_domains=()):
     ti = ThreatIntel(threat_ips, threat_domains)
     return {
-        "conn": [LanScan(), FanOut(), Beaconing(), ti, RiskyProtocol()],
+        "conn": [DecoyContact(), LanScan(), FanOut(), Beaconing(), ti, RiskyProtocol()],
         "dns": [SuspiciousDNS(), ti],
     }

@@ -13,8 +13,8 @@ os.environ.setdefault("API_URL", "http://127.0.0.1:9")   # nothing listening: al
 
 import pytest
 from engine import config, detectors
-from engine.detectors import (Beaconing, FanOut, LanScan, RiskyProtocol, SuspiciousDNS,
-                              ThreatIntel)
+from engine.detectors import (Beaconing, DecoyContact, FanOut, LanScan, RiskyProtocol,
+                              SuspiciousDNS, ThreatIntel)
 from engine.scoring import Scorer
 
 CAM = "192.168.50.23"
@@ -36,6 +36,19 @@ def run(det, rows):
     for r in rows:
         out += det.on_conn(r)
     return out
+
+
+def test_decoy_contact_fires_for_lan_device():
+    alerts = DecoyContact().on_conn(conn(config.DECOY_IP, 23))
+    assert len(alerts) == 1
+    a = alerts[0]
+    assert a["type"] == "decoy_login" and a["severity"] == "critical"
+    assert a["mac"] == "aa:bb:cc:00:00:23"
+    assert "port 23" in a["evidence"] and "seen in traffic" in a["evidence"]
+
+
+def test_decoy_contact_ignores_gateway():
+    assert DecoyContact().on_conn(conn(config.DECOY_IP, 23, src=config.GATEWAY_IP)) == []
 
 
 def test_lan_scan_fires_on_telnet_sweep():
