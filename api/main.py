@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Callable, Literal, Optional
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from .notifiers.telegram.notifier import notify as telegram_notify
@@ -232,6 +233,7 @@ def create_app(
         except WebSocketDisconnect:
             live.disconnect(websocket)
 
+    app.mount("/", StaticFiles(directory=str(ROOT / "dashboard"), html=True), name="dashboard")
     return app
 
 

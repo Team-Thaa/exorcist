@@ -139,6 +139,19 @@ def test_device_accepts_additional_schema_properties(tmp_path):
         assert response.json()["last_seen"] == "from-discovery"
 
 
+def test_dashboard_is_served_from_same_origin_as_api(tmp_path):
+    with build_client(tmp_path) as client:
+        page = client.get("/")
+        script = client.get("/app.js")
+        stylesheet = client.get("/app.css")
+
+        assert page.status_code == 200
+        assert 'href="/app.css"' in page.text
+        assert script.status_code == 200
+        assert "WebSocket" in script.text
+        assert stylesheet.status_code == 200
+
+
 def test_quarantine_and_release_are_mac_keyed_and_idempotent(tmp_path):
     calls = []
 

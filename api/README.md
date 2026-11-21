@@ -13,6 +13,9 @@ python3 -m pip install -r api/requirements.txt
 uvicorn api.main:app --host 127.0.0.1 --port 8000
 ```
 
+The dashboard is served at `http://127.0.0.1:8000/` from the same origin as
+the API, so its REST and WebSocket requests need no separate CORS setup.
+
 The detection engine already posts alerts to `http://127.0.0.1:8000/alerts`.
 The database defaults to `api/exorcist.sqlite3` (ignored by Git); set
 `EXORCIST_DB_PATH` to choose another path.
