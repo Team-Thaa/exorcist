@@ -11,7 +11,7 @@ import urllib.request
 from . import config, dns_hijack, quarantine
 from .alerts import AlertSink
 from .decoy import Decoy
-from .detectors import default_detectors
+from .detectors import DecoyContact, default_detectors
 from .scoring import Scorer
 from .tailer import follow
 
@@ -52,6 +52,22 @@ def process(kind, rows, detectors, sink):
                 sink.emit(out)
 
 
+def without_decoy_contact(detectors):
+    """Copy of the detectors without DecoyContact. Used when the live decoy listener reports hits itself,
+    so one decoy hit doesn't show up twice."""
+    return {**detectors, "conn": [d for d in detectors["conn"] if not isinstance(d, DecoyContact)]}
+
+
+def start_decoy(emit, wait=1.0):
+    """Start the decoy listener in a background thread. Returns True if it is still running after
+    `wait` seconds. If it can't bind its ports (decoy IP not on this machine, no root for port 23),
+    the thread dies straight away and this returns False."""
+    t = threading.Thread(target=Decoy(emit).run, daemon=True)
+    t.start()
+    t.join(wait)
+    return t.is_alive()
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--replay", nargs="+", help="process Zeek JSON log files and exit")
@@ -72,7 +88,10 @@ def main():
 
     quarantine.setup()
     if not args.no_decoy:
-        threading.Thread(target=Decoy(sink.emit).run, daemon=True).start()
+        if start_decoy(sink.emit):
+            detectors = without_decoy_contact(detectors)   # the listener reports decoy hits itself
+        else:
+            print("[decoy] listener failed to start; spotting decoy contact in conn.log instead")
     if config.ROUTER_IP:
         threading.Thread(target=dns_hijack.loop, args=(config.ROUTER_IP, sink.emit), daemon=True).start()
     dns_path = os.path.join(config.ZEEK_LOG_DIR, "dns.log")

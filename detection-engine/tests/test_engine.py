@@ -51,6 +51,28 @@ def test_decoy_contact_ignores_gateway():
     assert DecoyContact().on_conn(conn(config.DECOY_IP, 23, src=config.GATEWAY_IP)) == []
 
 
+@pytest.mark.filterwarnings("ignore::pytest.PytestUnhandledThreadExceptionWarning")  # the expected bind failure
+def test_live_mode_drops_decoy_contact_only_when_listener_runs(monkeypatch):
+    from engine.main import start_decoy, without_decoy_contact
+    full = detectors.default_detectors()
+
+    # Removing DecoyContact keeps every other detector and leaves the original list alone (replay uses it).
+    live = without_decoy_contact(full)
+    assert [type(d).__name__ for d in live["conn"]] == \
+        [type(d).__name__ for d in full["conn"] if not isinstance(d, DecoyContact)]
+    assert isinstance(full["conn"][0], DecoyContact)
+    assert live["dns"] is full["dns"]
+
+    # Listener binds: reported as running. (Own ports, so it can't clash with the other decoy test.)
+    monkeypatch.setattr(config, "DECOY_TELNET_PORTS", [12324])
+    monkeypatch.setattr(config, "DECOY_HTTP_PORT", 18081)
+    assert start_decoy(lambda alerts: None, wait=0.5) is True
+
+    # Listener can't bind (192.0.2.1 is a documentation address, never on this machine): not running.
+    monkeypatch.setattr(config, "DECOY_IP", "192.0.2.1")
+    assert start_decoy(lambda alerts: None, wait=0.5) is False
+
+
 def test_lan_scan_fires_on_telnet_sweep():
     rows = [conn(f"192.168.50.{100 + i}", 23, T0 + i) for i in range(12)]
     alerts = run(LanScan(), rows)
