@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Alert",
+  "type": "object",
+  "required": ["mac", "ip", "source", "type", "severity", "evidence", "time", "ts"],
+  "properties": {
+    "mac": {"type": "string", "description": "Device MAC, or ip:<addr> if unknown"},
+    "ip": {"type": "string"},
+    "source": {"enum": ["engine", "model"]},
+    "type": {
+      "enum": ["decoy_login", "lan_scan", "beaconing", "threat_intel", "dns_suspicious",
+               "dns_hijack", "fanout", "risky_protocol", "ml_botnet", "ml_anomaly"]
+    },
+    "severity": {"enum": ["low", "medium", "high", "critical"]},
+    "evidence": {"type": "string", "description": "Plain-language reason"},
+    "time": {"type": "string", "format": "date-time"},
+    "ts": {"type": "number", "description": "Unix time"},
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1, "description": "Models only"},
+    "infection_score": {"type": "integer", "minimum": 0, "maximum": 100},
+    "status": {"enum": ["safe", "at_risk", "infected"]}
+  }
+}

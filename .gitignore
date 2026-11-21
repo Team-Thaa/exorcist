@@ -21,8 +21,8 @@ lab/captures/*
 !lab/captures/.gitkeep
 *.pcap
 *.pcapng
-ai-models/data/*
-!ai-models/data/.gitkeep
+models/data/*
+!models/data/.gitkeep
 *.qcow2
 *.img
 

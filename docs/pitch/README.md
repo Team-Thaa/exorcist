@@ -1,2 +1,3 @@
-# Pitch (owner: Nitin)
+# pitch
+
 Slides, demo script, screenshots.

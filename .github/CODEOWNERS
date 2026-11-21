@@ -1,0 +1,10 @@
+# GitHub auto-requests a review from the owner when files in their folder change.
+# Replace each placeholder with the teammate's GitHub username, then uncomment.
+# /detection-engine/  @varun935
+# /discovery/         @AARYAN_USERNAME
+# /api/               @AARYAN_USERNAME
+# /models/            @TEJAS_USERNAME
+# /dashboard/         @VEDANTI_USERNAME
+# /lab/               @NITIN_USERNAME
+# /docs/              @NITIN_USERNAME
+# /shared/            @varun935 @AARYAN_USERNAME @TEJAS_USERNAME @VEDANTI_USERNAME

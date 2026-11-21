@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Device",
+  "type": "object",
+  "required": ["mac", "ip"],
+  "properties": {
+    "mac": {"type": "string"},
+    "ip": {"type": "string"},
+    "vendor": {"type": "string"},
+    "type": {"type": "string", "description": "router, camera, phone, ..."},
+    "label": {"type": "string"},
+    "open_ports": {"type": "array", "items": {"type": "integer"}},
+    "firmware": {"type": "string"},
+    "exposure_score": {"type": "integer", "minimum": 0, "maximum": 100},
+    "findings": {"type": "array", "items": {"type": "string"}},
+    "infection_score": {"type": "integer", "minimum": 0, "maximum": 100},
+    "status": {"enum": ["safe", "at_risk", "infected"]},
+    "quarantined": {"type": "boolean"},
+    "explanation": {"type": "string"}
+  }
+}
