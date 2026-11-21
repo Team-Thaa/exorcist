@@ -1,0 +1,75 @@
+{
+  "_note": "PLACEHOLDER ESTIMATES. Replace with your lab counts: hits/runs from fake-bot runs, false/healthy from healthy device-minutes. 'hard': true = by design no healthy device can trigger it, so one fresh hit turns the device red.",
+  "decoy_login": {
+    "family": "decoy",
+    "hits": 18,
+    "runs": 20,
+    "false": 0,
+    "healthy": 240,
+    "hard": true
+  },
+  "threat_intel": {
+    "family": "bad_servers",
+    "hits": 15,
+    "runs": 20,
+    "false": 0,
+    "healthy": 240,
+    "hard": true
+  },
+  "beaconing": {
+    "family": "bad_servers",
+    "hits": 16,
+    "runs": 20,
+    "false": 12,
+    "healthy": 240
+  },
+  "lan_scan": {
+    "family": "spreading",
+    "hits": 14,
+    "runs": 20,
+    "false": 2,
+    "healthy": 240
+  },
+  "dns_hijack": {
+    "family": "dns",
+    "hits": 9,
+    "runs": 10,
+    "false": 0,
+    "healthy": 240
+  },
+  "dns_suspicious": {
+    "family": "dns",
+    "hits": 10,
+    "runs": 20,
+    "false": 10,
+    "healthy": 240
+  },
+  "fanout": {
+    "family": "attack",
+    "hits": 8,
+    "runs": 20,
+    "false": 3,
+    "healthy": 240
+  },
+  "risky_protocol": {
+    "family": "attack",
+    "hits": 12,
+    "runs": 20,
+    "false": 4,
+    "healthy": 240
+  },
+  "ml_botnet": {
+    "family": "ai",
+    "hits": 15,
+    "runs": 20,
+    "false": 8,
+    "healthy": 240
+  },
+  "ml_anomaly": {
+    "family": "ai",
+    "hits": 16,
+    "runs": 20,
+    "false": 10,
+    "healthy": 240
+  }
+}
