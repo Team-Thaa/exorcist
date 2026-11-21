@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+.env
+
+# Node
+node_modules/
+dist/
+build/
+
+# Runtime output
+alerts.jsonl
+*.db
+*.sqlite3
+
+# Lab data (too big for git)
+lab/captures/*
+!lab/captures/.gitkeep
+*.pcap
+*.pcapng
+ai-models/data/*
+!ai-models/data/.gitkeep
+*.qcow2
+*.img
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
