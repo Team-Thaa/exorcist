@@ -1,45 +1,51 @@
 # discovery
 
-Finds LAN hosts with reachable common TCP services and creates one record per
-device matching `shared/device.schema.json`. The initial exposure audit is
-limited to observed LAN ports: it reports reachable services, an explainable
-0–100 exposure score, and basic type hints (for example, RTSP suggests a
-camera). It does not exploit services, retrieve firmware, or test whether a
-service is reachable from the internet.
+Builds a LAN device inventory from Zeek `conn.log` JSON, following the
+technical guide's metadata-only design. It does not probe or otherwise touch
+devices. Device identity is the MAC address: use Zeek's `orig_l2_addr` first,
+then the Pi's `/proc/net/arp` table, and finally `ip:<address>` if neither
+provides a MAC.
 
 ## Run
 
-From the repository root, scan an authorized private subnet no larger than a
-`/24`:
+Run from the repository root after starting Zeek with JSON logs and
+`policy/protocols/conn/mac-logging`, as described in the detection-engine
+guide:
 
 ```bash
-python3 -m discovery --network 192.168.1.0/24
+ZEEK_LOG_DIR=$HOME/zeeklogs python3 -m discovery
 ```
 
-The output is a JSON array on stdout. Connection timeout is configurable from
-0.05 to 2 seconds:
+By default, discovery reads `$ZEEK_LOG_DIR/conn.log` (or
+`/opt/zeek/logs/current/conn.log`) and uses the detection engine's `LAN_CIDR`,
+`GATEWAY_IP`, and `DECOY_IP` defaults. Override them when needed:
 
 ```bash
-python3 -m discovery --network 192.168.1.0/24 --timeout 0.5
+LAN_CIDR=192.168.50.0/24 ZEEK_LOG_DIR=$HOME/zeeklogs \
+  python3 -m discovery --conn-log $HOME/zeeklogs/conn.log
 ```
 
-The scanner uses only Python's standard library. It checks TCP ports
-22, 23, 53, 80, 443, 554, 8080, and 8443, sequentially per host with at most
-32 hosts in flight. Hosts with no reachable checked port are omitted. MAC
-addresses are read from the OS neighbor cache; if unavailable, the record
-uses `ip:<address>` as a placeholder.
+The output is a JSON array of records matching `shared/device.schema.json`.
+Zeek header lines are ignored, and malformed JSON is reported with its file
+and line number. The default LAN is `192.168.50.0/24`; the gateway and decoy
+are excluded from the inventory. Only LAN endpoints observed in the log are
+included.
 
-The API currently has no documented device-ingest route, so this first version
-prints schema-shaped records rather than posting them. Firmware inventory and
-vendor identification require a trusted inventory source and are intentionally
-not guessed from open ports.
+## Exposure audit
 
-## Exposure score
+No active port scan is performed. A destination port is included in
+`open_ports` only when Zeek records a LAN device responding to a connection
+(for example, `SF` or `SH` state, or positive responder bytes). This is
+passive evidence, not a complete inventory of listening services; long-lived
+connections may not appear in Zeek logs until they close. The exposure score
+is a transparent triage heuristic based on these observed services, not an
+infection verdict or proof of internet reachability. Discovery does not set
+the device `status` or `infection_score`; those are owned by the detection
+engine, which evaluates behavioral evidence.
 
-Scores are additive and capped at 100. Telnet (23) contributes 40, RTSP (554)
-25, unencrypted HTTP (80/8080) 15, SSH and DNS (22/53) 10 each, and HTTPS
-(443/8443) 5 each. A score of 30 or more is marked `at_risk`; lower scores are
-`safe`. These are triage heuristics, not vulnerability findings.
+Scores are additive and capped at 100. Telnet (23/2323) contributes 40, RTSP
+(554) 25, unencrypted HTTP (80/8080) 15, SSH and DNS (22/53) 10 each, and
+HTTPS (443/8443) 5 each. Firmware and vendor fields are not guessed.
 
 ## Tests
 
