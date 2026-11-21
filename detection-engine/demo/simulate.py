@@ -14,6 +14,7 @@ import time
 import uuid
 
 GATEWAY = "192.168.50.1"
+GATEWAY_DEV = (GATEWAY, "aa:bb:cc:00:00:01")
 DECOY = "192.168.50.99"
 C2 = ("10.66.0.10", 8080)
 PHONE = ("192.168.50.30", "aa:bb:cc:00:00:30")
@@ -53,6 +54,13 @@ def phase1(t0):
     for gap in (0, 23, 61, 70, 112, 150, 198):   # irregular, so it never looks like beaconing
         ev.append((conn(t0 + 3 + gap, CAMERA, *CAMERA_CLOUD, sent=250000, recv=900),
                    "camera uploads video clip to its cloud"))
+    # Connections TO the camera that it answers, so passive discovery sees RTSP (camera) and open Telnet.
+    for at in (30, 125, 205):
+        ev.append((conn(t0 + at, PHONE, CAMERA[0], 554, sent=900, recv=250000),
+                   "phone watches the camera's live stream (RTSP 554)"))
+    for at in (80, 170):
+        ev.append((conn(t0 + at, GATEWAY_DEV, CAMERA[0], 23, sent=60, recv=120),
+                   "gateway checks the camera's Telnet port (answers: open)"))
     return sorted(ev, key=lambda e: e[0][1]["ts"]), t0 + 260
 
 
