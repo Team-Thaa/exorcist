@@ -47,6 +47,16 @@ def test_inventory_uses_zeek_mac_and_only_records_observed_responder_services():
     assert by_mac["aa:bb:cc:00:00:24"]["type"] == "camera"
 
 
+@pytest.mark.parametrize("state", ["S0", "REJ", "OTH"])
+def test_unanswered_attempt_does_not_create_a_device(state):
+    rows = [conn("192.168.50.23", "192.168.50.105", 23, state=state, resp_bytes=0,
+                 mac="aa:bb:cc:00:00:23")]
+
+    devices = discover_devices(rows)
+
+    assert [device["mac"] for device in devices] == ["aa:bb:cc:00:00:23"]
+
+
 def test_inventory_filters_gateway_decoy_and_external_addresses():
     rows = [
         conn("192.168.50.1", "8.8.8.8", 443, mac="aa:bb:cc:00:00:01"),

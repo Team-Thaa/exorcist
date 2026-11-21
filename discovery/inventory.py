@@ -13,6 +13,7 @@ from .audit import audit_device
 
 _MAC_PATTERN = re.compile(r"(?i)^(?:[0-9a-f]{2}:){5}[0-9a-f]{2}$")
 _RESPONDED_STATES = {"SF", "S1", "S2", "S3", "SH"}
+_UNANSWERED_STATES = {"S0", "REJ", "OTH"}
 
 
 def read_conn_log(path: str | Path) -> Iterator[dict]:
@@ -71,6 +72,17 @@ def _is_lan_ip(value: object, network: ipaddress.IPv4Network) -> bool:
 
 def _responded(row: dict) -> bool:
     if row.get("conn_state") in _RESPONDED_STATES:
+        return True
+    try:
+        return int(row.get("resp_bytes", 0)) > 0
+    except (TypeError, ValueError):
+        return False
+
+
+def _answered(row: dict) -> bool:
+    """True if the destination showed any sign of life, so it can be recorded as a device.
+    Unanswered attempts (a scan of empty addresses) must not invent devices."""
+    if row.get("conn_state") not in _UNANSWERED_STATES:
         return True
     try:
         return int(row.get("resp_bytes", 0)) > 0
@@ -140,7 +152,7 @@ def discover_devices(
             timestamp = 0
 
         observe(origin_ip, row.get("orig_l2_addr"), timestamp)
-        responder = observe(responder_ip, None, timestamp)
+        responder = observe(responder_ip, None, timestamp) if _answered(row) else None
         if responder is not None and _responded(row):
             port = row.get("id.resp_p")
             if isinstance(port, int) and 0 < port <= 65535:
