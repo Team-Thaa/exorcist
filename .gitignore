@@ -33,3 +33,4 @@ models/data/*
 
 # Local Claude Code context
 CLAUDE.md
+*.gguf
